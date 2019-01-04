@@ -33,7 +33,7 @@ RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk && \
     rm *tools*linux*.zip && \
     echo "y" | tools/bin/sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" >/dev/null && \
     echo "y" | tools/bin/sdkmanager "platform-tools" >/dev/null && \
-    echo "y" | tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null
+    echo "y" | tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null 
 
 # set the environment variables
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
@@ -43,6 +43,8 @@ ENV _JAVA_OPTIONS -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForH
 
 # accept the license agreements of the SDK components
 ADD license_accepter.sh /opt/
+RUN mkdir -p ${ANDROID_HOME}/tools/ant/
+ADD build.xml ${ANDROID_HOME}/tools/ant/
 RUN /opt/license_accepter.sh $ANDROID_HOME
 
 # install and configure SSH server
