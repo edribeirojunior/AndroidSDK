@@ -4,7 +4,7 @@
 
 # Base image
 # ---------------------------------------------------------------------- #
-FROM ubuntu:18.04
+FROM maven:3.6.0-jdk-8
 
 # Author
 # ---------------------------------------------------------------------- #
@@ -20,20 +20,20 @@ RUN dpkg --add-architecture i386 && \
     apt-get install -y --no-install-recommends openjdk-8-jdk && \
     apt-get install -y git wget zip && \
     apt-get install -y qt5-default
-    
+
 # download and install Android SDK
 # https://developer.android.com/studio/#downloads
 ARG ANDROID_SDK_VERSION=4333796
 ARG ANDROID_COMPILE_SDK=19
-ARG ANDROID_BUILD_TOOLS=4.4.2
+ARG ANDROID_BUILD_TOOLS=28.0.3
 
 RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk && \
     wget -q https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_VERSION}.zip && \
     unzip *tools*linux*.zip && \
-    rm *tools*linux*.zip
-    echo y | tools/bin/sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" >/dev/null
-    echo y | tools/bin/sdkmanager "platform-tools" >/dev/null
-    echo y | tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null
+    rm *tools*linux*.zip && \
+    echo "y" | tools/bin/sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" >/dev/null && \
+    echo "y" | tools/bin/sdkmanager "platform-tools" >/dev/null && \
+    echo "y" | tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null
 
 # set the environment variables
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
