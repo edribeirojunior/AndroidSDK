@@ -9,10 +9,10 @@ fi
 
 docker login
 
-DOCKER_HUB_ACCOUNT=thyrlian
+DOCKER_HUB_ACCOUNT=edribeirojunior
 BASE_IMAGE_NAME=ubuntu
-BASE_IMAGE_VERSION=16.04
-MAIN_IMAGE_NAME=android-sdk
+BASE_IMAGE_VERSION=18.04
+MAIN_IMAGE_NAME=android-sdk-4.4.2
 SUB_IMAGE_NAME=android-sdk-vnc
 IMAGE_DIR=android-sdk
 TEMP_DIR=temp_authorized_keys

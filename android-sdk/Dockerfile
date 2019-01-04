@@ -4,11 +4,11 @@
 
 # Base image
 # ---------------------------------------------------------------------- #
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 # Author
 # ---------------------------------------------------------------------- #
-LABEL maintainer "thyrlian@gmail.com"
+LABEL maintainer "edribeirojunior@gmail.com"
 
 # support multiarch: i386 architecture
 # install Java
@@ -20,46 +20,30 @@ RUN dpkg --add-architecture i386 && \
     apt-get install -y --no-install-recommends openjdk-8-jdk && \
     apt-get install -y git wget zip && \
     apt-get install -y qt5-default
-
-# download and install Gradle
-# https://services.gradle.org/distributions/
-ARG GRADLE_VERSION=4.10.3
-RUN cd /opt && \
-    wget -q https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip && \
-    unzip gradle*.zip && \
-    ls -d */ | sed 's/\/*$//g' | xargs -I{} mv {} gradle && \
-    rm gradle*.zip
-
-# download and install Kotlin compiler
-# https://github.com/JetBrains/kotlin/releases/latest
-ARG KOTLIN_VERSION=1.3.11
-RUN cd /opt && \
-    wget -q https://github.com/JetBrains/kotlin/releases/download/v${KOTLIN_VERSION}/kotlin-compiler-${KOTLIN_VERSION}.zip && \
-    unzip *kotlin*.zip && \
-    rm *kotlin*.zip
-
+    
 # download and install Android SDK
 # https://developer.android.com/studio/#downloads
 ARG ANDROID_SDK_VERSION=4333796
+ARG ANDROID_COMPILE_SDK=19
+ARG ANDROID_BUILD_TOOLS=4.4.2
+
 RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk && \
     wget -q https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_VERSION}.zip && \
     unzip *tools*linux*.zip && \
     rm *tools*linux*.zip
+    echo y | tools/bin/sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" >/dev/null
+    echo y | tools/bin/sdkmanager "platform-tools" >/dev/null
+    echo y | tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null
 
 # set the environment variables
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
-ENV GRADLE_HOME /opt/gradle
-ENV KOTLIN_HOME /opt/kotlinc
 ENV ANDROID_HOME /opt/android-sdk
-ENV PATH ${PATH}:${GRADLE_HOME}/bin:${KOTLIN_HOME}/bin:${ANDROID_HOME}/emulator:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/tools/bin
+ENV PATH ${PATH}:${ANDROID_HOME}/emulator:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/tools/bin
 ENV _JAVA_OPTIONS -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
 
 # accept the license agreements of the SDK components
 ADD license_accepter.sh /opt/
 RUN /opt/license_accepter.sh $ANDROID_HOME
-
-# setup adb server
-EXPOSE 5037
 
 # install and configure SSH server
 EXPOSE 22
@@ -75,7 +59,7 @@ RUN apt-get update -y && \
     ssh-keygen -q -N "" -f /root/.ssh/id_rsa && \
     FILE_SSH_ENV="/root/.ssh/environment" && \
     touch $FILE_SSH_ENV && chmod 600 $FILE_SSH_ENV && \
-    printenv | grep "JAVA_HOME\|GRADLE_HOME\|KOTLIN_HOME\|ANDROID_HOME\|LD_LIBRARY_PATH\|PATH" >> $FILE_SSH_ENV && \
+    printenv | grep "JAVA_HOME\|ANDROID_HOME\|LD_LIBRARY_PATH\|PATH" >> $FILE_SSH_ENV && \
     FILE_AUTH_KEYS="/root/.ssh/authorized_keys" && \
     touch $FILE_AUTH_KEYS && chmod 600 $FILE_AUTH_KEYS && \
     for file in /tmp/*.pub; \
