@@ -7,6 +7,16 @@ Android SDK development environment Docker image
 
 <img src="https://github.com/thyrlian/AndroidSDK/blob/master/images/logo.png?raw=true" width="200">
 
+## Android-SDK Installed Packages 
+
+  Path                 | Version | Description                    | Location
+  -------              | ------- | -------                        | -------
+  build-tools;28.0.3   | 28.0.3  | Android SDK Build-Tools 28.0.3 | build-tools/28.0.3/
+  platform-tools       | 28.0.1  | Android SDK Platform-Tools     | platform-tools/
+  platforms;android-19 | 4       | Android SDK Platform 19        | platforms/android-19/
+  tools                | 25.2.5  | Android SDK Tools 25.2.5       | tools/
+
+
 ## Goals
 
 * It contains the complete Android SDK enviroment, is able to perform all regular Android jobs.
