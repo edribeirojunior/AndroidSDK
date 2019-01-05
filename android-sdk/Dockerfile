@@ -25,12 +25,16 @@ RUN dpkg --add-architecture i386 && \
 # https://developer.android.com/studio/#downloads
 ARG ANDROID_SDK_VERSION=4333796
 ARG ANDROID_COMPILE_SDK=19
-ARG ANDROID_BUILD_TOOLS=25.0.3
+ARG ANDROID_BUILD_TOOLS=28.0.3
+
 
 RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk && \
     wget -q https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_VERSION}.zip && \
     unzip *tools*linux*.zip && \
     rm *tools*linux*.zip && \
+    wget -q https://dl.google.com/android/repository/tools_r25.2.5-linux.zip && \
+    unzip -o tools_r25.2.5-linux.zip && \
+    rm tools_*linux.zip && \
     echo "y" | tools/bin/sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" >/dev/null && \
     echo "y" | tools/bin/sdkmanager "platform-tools" >/dev/null && \
     echo "y" | tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null
