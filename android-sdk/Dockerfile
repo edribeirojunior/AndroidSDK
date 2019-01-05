@@ -25,7 +25,7 @@ RUN dpkg --add-architecture i386 && \
 # https://developer.android.com/studio/#downloads
 ARG ANDROID_SDK_VERSION=4333796
 ARG ANDROID_COMPILE_SDK=19
-ARG ANDROID_BUILD_TOOLS=25.2.5
+ARG ANDROID_BUILD_TOOLS=25.0.3
 
 RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk && \
     wget -q https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_VERSION}.zip && \
