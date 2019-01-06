@@ -5,8 +5,6 @@ Android SDK development environment Docker image
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-info-blue.svg)](https://hub.docker.com/r/edribeirojunior/android-sdk-mvn/)
 [![Build Status](https://travis-ci.org/edribeirojunior/AndroidSDK.svg?branch=master)](https://travis-ci.org/edribeirojunior/AndroidSDK)
 
-<img src="https://github.com/thyrlian/AndroidSDK/blob/master/images/logo.png?raw=true" width="200">
-
 ## Android-SDK Installed Packages 
 
   Path                 | Version | Description                    | Location
@@ -88,15 +86,17 @@ If you by accident update SDK on a host machine which has a mismatch target arch
 # build the image
 # set the working directory to the project's root directory first
 docker build -t android-sdk android-sdk
+# if you need to send the image to a registry
+docker build -t android-sdk REGISTRY-NAME/android-sdk:TAG
 # or you can also pass specific tool version as you wish (optional, while there is default version)
-docker build --build-arg GRADLE_VERSION=<gradle_version> --build-arg KOTLIN_VERSION=<kotlin_version> --build-arg ANDROID_SDK_VERSION=<android_sdk_version> -t android-sdk android-sdk
+docker build --build-arg ANDROID_SDK_VERSION=<android_sdk_version> -t android-sdk android-sdk
 # or pull the image instead of building on your own
-docker pull thyrlian/android-sdk
+docker pull edribeirojunior/android-sdk-mvn
 
 # below commands assume that you've pulled the image
 
 # copy the pre-downloaded SDK to the mounted 'sdk' directory
-docker run -it --rm -v $(pwd)/sdk:/sdk thyrlian/android-sdk bash -c 'cp -a $ANDROID_HOME/. /sdk'
+docker run -it --rm -v $(pwd)/sdk:/sdk edribeirojunior/android-sdk-mvn bash -c 'cp -a $ANDROID_HOME/. /sdk'
 
 # go to the 'sdk' directory on the host, update the SDK
 # ONLY IF the host machine is the same target architecture as the container
@@ -109,17 +109,17 @@ sdk/tools/bin/sdkmanager "build-tools;x.y.z" "platforms;android-x" ...
 # if the host SDK directory is mounted to more than one container
 # to avoid multiple containers writing to the SDK directory at the same time
 # you should mount the SDK volume in read-only mode
-docker run -it -v $(pwd)/sdk:/opt/android-sdk:ro thyrlian/android-sdk /bin/bash
+docker run -it -v $(pwd)/sdk:/opt/android-sdk:ro edribeirojunior/android-sdk-mvn /bin/bash
 
 # you can mount without read-only option, only if you need to update SDK inside container
-docker run -it -v $(pwd)/sdk:/opt/android-sdk thyrlian/android-sdk /bin/bash
+docker run -it -v $(pwd)/sdk:/opt/android-sdk edribeirojunior/android-sdk-mvn /bin/bash
 
 # to keep and reuse Gradle cache
-docker run -it -v $(pwd)/sdk:/opt/android-sdk -v $(pwd)/gradle_caches:/root/.gradle/caches thyrlian/android-sdk /bin/bash
+docker run -it -v $(pwd)/sdk:/opt/android-sdk -v $(pwd)/gradle_caches:/root/.gradle/caches edribeirojunior/android-sdk-mvn /bin/bash
 
 # to stop and remove container
 # when the image was pulled from a registry
-docker stop $(docker ps -aqf "ancestor=thyrlian/android-sdk") &> /dev/null && docker rm $(docker ps -aqf "ancestor=thyrlian/android-sdk") &> /dev/null
+docker stop $(docker ps -aqf "ancestor=edribeirojunior/android-sdk-mvn") &> /dev/null && docker rm $(docker ps -aqf "ancestor=edribeirojunior/android-sdk-mvn") &> /dev/null
 # when the image was built locally
 docker stop $(docker ps -aqf "ancestor=android-sdk") &> /dev/null && docker rm $(docker ps -aqf "ancestor=android-sdk") &> /dev/null
 # more flexible way - doesn't matter where the image comes from
@@ -145,7 +145,7 @@ It is also possible if you wanna connect to container via SSH.  There are three 
 * Mount `authorized_keys` file from the host to a container
 
   ```bash
-  docker run -d -p 2222:22 -v $(pwd)/authorized_keys:/root/.ssh/authorized_keys thyrlian/android-sdk
+  docker run -d -p 2222:22 -v $(pwd)/authorized_keys:/root/.ssh/authorized_keys edribeirojunior/android-sdk-mvn
   ```
 
 * Copy a local `authorized_keys` file to a container
@@ -154,13 +154,13 @@ It is also possible if you wanna connect to container via SSH.  There are three 
   # Create a local `authorized_keys` file, which contains the content from your `id_rsa.pub`
   
   # Run a container
-  docker run -d -p 2222:22 -v $(pwd)/sdk:/opt/android-sdk:ro thyrlian/android-sdk
+  docker run -d -p 2222:22 -v $(pwd)/sdk:/opt/android-sdk:ro edribeirojunior/android-sdk-mvn
   
   # Copy the just created local authorized_keys file to the running container
-  docker cp $(pwd)/authorized_keys `docker ps -aqf "ancestor=thyrlian/android-sdk"`:/root/.ssh/authorized_keys
+  docker cp $(pwd)/authorized_keys `docker ps -aqf "ancestor=edribeirojunior/android-sdk-mvn"`:/root/.ssh/authorized_keys
   
   # Set the proper owner and group for authorized_keys file
-  docker exec -it `docker ps -aqf "ancestor=thyrlian/android-sdk"` bash -c 'chown root:root /root/.ssh/authorized_keys'
+  docker exec -it `docker ps -aqf "ancestor=edribeirojunior/android-sdk-mvn"` bash -c 'chown root:root /root/.ssh/authorized_keys'
   ```
 
 That's it!  Now it's up and running, you can ssh to it
@@ -250,39 +250,6 @@ And here are instructions for configuring a NFS server (on Ubuntu):
   sudo service nfs-kernel-server start
   ```
 
-## Gradle distributions mirror server
-
-There is still a little room for optimization: recent distribution of Gradle is around 90MB, imagine different containers / build jobs have to perform downloading many times, and it has high influence upon your network bandwidth.  Setting up a local Gradle distributions mirror server would significantly boost your download speed.
-
-Fortunately, you can easily build such a mirror server docker image on your own.
-
-  ```bash
-  docker build -t gradle-server gradle-server
-  # by default it downloads the most recent 14 gradle distributions (excluding rc or milestone)
-  ```
-
-The download amount can be changed [here](https://github.com/thyrlian/AndroidSDK/blob/master/gradle-server/Dockerfile#L30).  Preferably, you should run the [download script](https://github.com/thyrlian/AndroidSDK/blob/master/gradle-server/gradle_downloader.sh) locally, and mount the download directory to the container.
-
-  ```bash
-  gradle-server/gradle_downloader.sh [DOWNLOAD_DIRECTORY] [DOWNLOAD_AMOUNT]
-  docker run -d -p 80:80 -p 443:443 -v [DOWNLOAD_DIRECTORY]:/var/www/gradle.org/public_html/distributions gradle-server
-  ```
-
-  ```bash
-  # copy the SSL certificate from gradle server container to host machine
-  docker cp `docker ps -aqf "ancestor=gradle-server"`:/etc/apache2/ssl/apache.crt apache.crt
-  # copy the SSL certificate from host machine to AndroidSDK container
-  docker cp apache.crt `docker ps -aqf "ancestor=thyrlian/android-sdk"`:/home/apache.crt
-  # add self-signed SSL certificate to Java keystore
-  docker exec -it `docker ps -aqf "ancestor=thyrlian/android-sdk"` bash -c '$JAVA_HOME/bin/keytool -import -trustcacerts -file /home/apache.crt -keystore $JAVA_HOME/jre/lib/security/cacerts -storepass changeit -noprompt'
-  # map gradle services domain to your local IP
-  docker exec -it `docker ps -aqf "ancestor=thyrlian/android-sdk"` bash -c 'echo "[YOUR_HOST_IP_ADDRESS_FOR_GRADLE_CONTAINER] services.gradle.org" >> /etc/hosts'
-  ```
-
-Starting from now on, gradle wrapper will download gradle distributions from your local mirror server, lightning fast!  The downloaded distribution will be uncompressed to `/root/.gradle/wrapper/dists`.
-
-If you don't want to bother with SSL certificate, you can simply change the `distributionUrl` inside `[YOUR_PROJECT]/gradle/wrapper/gradle-wrapper.properties` from `https` to `http`.
-
 ## Emulator
 
 ARM emulator is host machine independent, can run anywhere - Linux, macOS, VM and etc.  While the performance is a bit poor.  On the contrary, x86 emulator requires KVM, which means only runnable on Linux.
@@ -364,7 +331,7 @@ Read [KVM Installation](https://help.ubuntu.com/community/KVM/Installation) if y
 
   ```bash
   # required by KVM
-  docker run -it --privileged -v $(pwd)/sdk:/opt/android-sdk:ro thyrlian/android-sdk /bin/bash
+  docker run -it --privileged -v $(pwd)/sdk:/opt/android-sdk:ro edribeirojunior/android-sdk-mvn /bin/bash
   ```
 
 * Check acceleration ability (not necessary for ARM emulator)
@@ -488,12 +455,12 @@ You can give a container access to host's USB Android devices.
 
   ```console
   # on Linux
-  docker run -it --privileged -v /dev/bus/usb:/dev/bus/usb -v $(pwd)/sdk:/opt/android-sdk thyrlian/android-sdk /bin/bash
+  docker run -it --privileged -v /dev/bus/usb:/dev/bus/usb -v $(pwd)/sdk:/opt/android-sdk edribeirojunior/android-sdk-mvn /bin/bash
   
   # or
   # try to avoid privileged flag, just add necessary capabilities when possible
   # --device option allows you to run devices inside the container without the --privileged flag
-  docker run -it --device=/dev/ttyUSB0 -v $(pwd)/sdk:/opt/android-sdk thyrlian/android-sdk /bin/bash
+  docker run -it --device=/dev/ttyUSB0 -v $(pwd)/sdk:/opt/android-sdk edribeirojunior/android-sdk-mvn /bin/bash
   ```
 
 Note:
@@ -567,7 +534,7 @@ For demonstration, below examples try to execute [MemoryFiller](https://github.c
   
     ```bash
     # spin up a container with memory limit (128MB)
-    docker run -it -m 128m -v $(pwd)/misc/MemoryFiller:/root/MemoryFiller thyrlian/android-sdk /bin/bash
+    docker run -it -m 128m -v $(pwd)/misc/MemoryFiller:/root/MemoryFiller edribeirojunior/android-sdk-mvn /bin/bash
     # fill memory up
     cd /root/MemoryFiller && javac MemoryFiller.java
     java MemoryFiller
@@ -587,7 +554,7 @@ For demonstration, below examples try to execute [MemoryFiller](https://github.c
   
     ```bash
     # spin up a container with memory limit (or without - both lead to the same result)
-    docker run -it -m 128m -v $(pwd)/misc/MemoryFiller:/root/MemoryFiller thyrlian/android-sdk /bin/bash
+    docker run -it -m 128m -v $(pwd)/misc/MemoryFiller:/root/MemoryFiller edribeirojunior/android-sdk-mvn /bin/bash
     # fill memory up
     # enable Docker memory limits transparency for JVM
     cd /root/MemoryFiller && javac MemoryFiller.java
@@ -608,7 +575,7 @@ For demonstration, below examples try to execute [MemoryFiller](https://github.c
   
     ```bash
     # spin up a container without memory limit
-    docker run -it -v $(pwd)/misc/MemoryFiller:/root/MemoryFiller thyrlian/android-sdk /bin/bash
+    docker run -it -v $(pwd)/misc/MemoryFiller:/root/MemoryFiller edribeirojunior/android-sdk-mvn /bin/bash
     # fill memory up
     cd /root/MemoryFiller && javac MemoryFiller.java
     # make sure that Docker memory resource is big enough > JVM max heap size
@@ -630,7 +597,7 @@ For demonstration, below examples try to execute [MemoryFiller](https://github.c
   
     ```bash
     # spin up a container without memory limit
-    docker run -it -v $(pwd)/misc/MemoryFiller:/root/MemoryFiller thyrlian/android-sdk /bin/bash
+    docker run -it -v $(pwd)/misc/MemoryFiller:/root/MemoryFiller edribeirojunior/android-sdk-mvn /bin/bash
     # fill memory up
     cd /root/MemoryFiller && javac MemoryFiller.java
     # make sure that Docker memory resource is big enough > JVM max heap size
