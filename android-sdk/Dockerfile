@@ -47,8 +47,6 @@ ENV _JAVA_OPTIONS -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForH
 
 # accept the license agreements of the SDK components
 ADD license_accepter.sh /opt/
-RUN mkdir -p ${ANDROID_HOME}/tools/ant/
-ADD build.xml ${ANDROID_HOME}/tools/ant/
 RUN /opt/license_accepter.sh $ANDROID_HOME
 
 # install and configure SSH server
